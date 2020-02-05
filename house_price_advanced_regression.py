@@ -89,7 +89,7 @@ print(house_data[house_data['LotFrontage'].isnull()]['LotArea'].describe())
 print(house_data[house_data['LotFrontage'].isnull()]['LotArea'].sort_values(ascending=False))
 
 lot_frontage_mask = (house_data['LotFrontage'].isnull()) & (house_data['LotArea'] < 40000)
-sns.swarmplot(data=house_data[lot_frontage_mask], y='LotArea', x='MSZoning')
+sns.swarmplot(data=house_data[lot_frontage_mask], y='LotArea', x='Neighborhood')
 plt.show()
 
 sns.scatterplot(data=house_data[house_data['LotArea'] < 40000],
@@ -110,7 +110,7 @@ linear = LinearRegression()
 
 # Fit the regression model on my available data & filter out outliers
 train_mask = (house_data['LotArea']<40000) & (house_data['LotFrontage'].notnull())
-X_train = np.array(house_data[train_mask].loc[:,'LotArea'])
+X_train = np.array(house_data[train_mask]['LotArea'])
 y_train = np.array(house_data[train_mask]['LotFrontage'])
 
 # Reshape my data to a 2D array for sklearn
@@ -121,4 +121,17 @@ y_train = y_train.reshape(-1, 1)
 linear.fit(X_train, y_train)
 print('Intercept is: ', linear.intercept_)
 print('Coefficient is: ',linear.coef_)
+print(linear.score(X_train, y_train))
+
+"""
+The R-squared value is only about 0.4, I've seen better. This will do for now.
+Now that I can estimate the LotFrontage given the LotArea I can fill in the blanks. This
+is a LinearRegression with a single coefficent, so I might just do this manually rather than
+use the .predict() method
+"""
+# Fill in the missing values
+for i in house_data[house_data['LotFrontage'].isnull()].index:
+     house_data.loc[i, 'LotFrontage'] = (house_data.loc[i, 'LotArea']*linear.coef_[0][0])+linear.intercept_[0]
+
+
 
